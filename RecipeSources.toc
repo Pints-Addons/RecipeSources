@@ -1,0 +1,13 @@
+## Interface: 11508, 11509, 16001
+## Title: Pints Recipe Sources
+## Notes: Adds a "Learnable" tab to profession windows listing every recipe you haven't learned, where to get it (trainer, vendor, drop, quest) and what it costs. Standalone - no other addons needed. /rsrc
+## Author: Jake (Pint's Add-ons, built with Claude)
+## X-License: GPL-3.0
+## Version: 3.1
+## X-Curse-Project-ID: 1776765
+## OptionalDeps: TomTom
+## SavedVariables: RecipeSourcesDB
+## SavedVariablesPerCharacter: RecipeSourcesCharDB
+
+RecipeData.lua
+RecipeSources.lua

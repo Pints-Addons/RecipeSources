@@ -1,0 +1,15 @@
+Pints Recipe Sources - Changelog
+
+v3.1
+NEW
+- "Other faction" option: tick the box at the top of the Learnable list to also see
+  recipes sold by the other faction's vendors or given by their quests. They're
+  tagged [Horde] or [Alliance] in red and listed after your own faction's sources.
+  These recipes are items, so a friend on the other side or the neutral auction house
+  can get them to you. Other-faction trainers stay hidden, since they can't teach you.
+  Off by default. (Thanks SawyerMBlack for the suggestion!)
+
+NOTES
+- Adds 16 recipes for Alliance and 41 for Horde that were hidden before, and extra
+  sources to over 100 more.
+- Your setting is saved account-wide.

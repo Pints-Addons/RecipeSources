@@ -1,0 +1,7 @@
+Pints Recipe Sources - by Jake (Pint's Add-ons), built with Claude.
+
+Data: generated from the CMaNGOS Classic world database - https://github.com/cmangos/classic-db (GPL).
+Trainers (npc_trainer), vendors (npc_vendor), loot tables (creature/reference/gameobject loot),
+quests, item and NPC names, trainer fees and vendor prices. Thank you to the CMaNGOS contributors.
+
+World of Warcraft names and game data are the property of Blizzard Entertainment.
