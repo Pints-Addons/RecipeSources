@@ -3,6 +3,14 @@
 -- Skill-up colors are learned from your own profession windows as your characters level.
 
 local ADDON = ...
+-- Compatibility: WoW Forever runs on the modern game client, where these older functions moved or were renamed.
+local GetItemInfo = GetItemInfo or (C_Item and C_Item.GetItemInfo)
+local GetItemInfoInstant = GetItemInfoInstant or (C_Item and C_Item.GetItemInfoInstant)
+local GetSpellInfo = GetSpellInfo or function(s)
+	local i = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(s)
+	if i then return i.name, nil, i.iconID, i.castTime, i.minRange, i.maxRange, i.spellID, i.originalIconID end
+end
+
 local ev = CreateFrame("Frame")
 local DB, CDB
 
@@ -208,7 +216,24 @@ local function Scan(skillID, done)
 end
 
 ---------------------------------------------------------------- known recipes
+-- the modern game client (WoW Forever) has one profession window with a different set of functions
+local MODERN = not GetTradeSkillLine and C_TradeSkillUI ~= nil
+local DIFF = { [0] = "optimal", [1] = "medium", [2] = "easy", [3] = "trivial" }
+local function ModernSkill()
+	local info = C_TradeSkillUI.GetChildProfessionInfo and C_TradeSkillUI.GetChildProfessionInfo()
+	if not (info and info.professionName and info.professionName ~= "") then
+		info = C_TradeSkillUI.GetBaseProfessionInfo and C_TradeSkillUI.GetBaseProfessionInfo()
+	end
+	if not info then return end
+	local name = info.parentProfessionName or info.professionName
+	if name and not SKILL[name] then
+		for k in pairs(SKILL) do if type(k) == "string" and name:find(k, 1, true) then name = k; break end end
+	end
+	return name, info.skillLevel, info.maxSkillLevel
+end
+
 local function CurrentSkill()
+	if MODERN then return ModernSkill() end
 	if active == "craft" and GetCraftDisplaySkillLine then
 		local name, rank, maxRank = GetCraftDisplaySkillLine()
 		return name, rank, maxRank
@@ -232,7 +257,12 @@ local function RememberKnown(skillID)
 		o[c .. "min"] = math.min(o[c .. "min"] or rank, rank)
 		o[c .. "max"] = math.max(o[c .. "max"] or rank, rank)
 	end
-	if active == "trade" then
+	if MODERN then
+		for _, id in ipairs(C_TradeSkillUI.GetAllRecipeIDs and C_TradeSkillUI.GetAllRecipeIDs() or {}) do
+			local r = C_TradeSkillUI.GetRecipeInfo(id)
+			if r and r.learned then seen(r.name, DIFF[r.relativeDifficulty]) end
+		end
+	elseif active == "trade" then
 		for i = 1, (GetNumTradeSkills() or 0) do
 			local name, t = GetTradeSkillInfo(i)
 			seen(name, t)
@@ -690,9 +720,13 @@ local function ScanMerchant()
 	end
 end
 
+local function TradeHost() return TradeSkillFrame or ProfessionsFrame end
+-- Classic's profession windows have a see-through margin, hence the old offsets; the modern window (WoW Forever)
+-- doesn't, so it has its own pair (moved with the same /rsrc commands there)
+local function Off() if MODERN then return DB.mpx, DB.mpy, DB.mtx, DB.mty end return DB.px, DB.py, DB.tx, DB.ty end
 local function ActiveFrame()
 	if active == "craft" then return CraftFrame end
-	return TradeSkillFrame
+	return TradeHost()
 end
 
 local function ShowPanel()
@@ -700,7 +734,8 @@ local function ShowPanel()
 	if not host then return end
 	if not panel then CreatePanel() end
 	panel:ClearAllPoints()
-	panel:SetPoint("TOPLEFT", host, "TOPRIGHT", DB.px, DB.py)
+	local px, py = Off()
+	panel:SetPoint("TOPLEFT", host, "TOPRIGHT", px, py)
 	panel:Show()
 	Render()
 end
@@ -715,7 +750,8 @@ local function MakeTab(host, which)
 	local b = CreateFrame("Button", nil, host, "UIPanelButtonTemplate")
 	b:SetSize(100, 22)
 	b:SetText("Learnable")
-	b:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", DB.tx, DB.ty)
+	local _, _, tx, ty = Off()
+	b:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", tx, ty)
 	b:SetScript("OnClick", function() active = which; TogglePanel() end)
 	b:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -730,7 +766,7 @@ end
 
 local function OnOpen(which)
 	active = which
-	MakeTab(which == "craft" and CraftFrame or TradeSkillFrame, which)
+	MakeTab(which == "craft" and CraftFrame or TradeHost(), which)
 	local name = CurrentSkill()
 	local supported = name and SKILL[name]
 	if tabs[which] then tabs[which]:SetShown(supported and true or false) end
@@ -742,20 +778,10 @@ local function OnOpen(which)
 	end
 end
 
-ev:RegisterEvent("ADDON_LOADED")
-ev:RegisterEvent("TRADE_SKILL_SHOW")
-ev:RegisterEvent("TRADE_SKILL_UPDATE")
-ev:RegisterEvent("CRAFT_SHOW")
-ev:RegisterEvent("CRAFT_UPDATE")
-ev:RegisterEvent("SKILL_LINES_CHANGED")
-ev:RegisterEvent("GET_ITEM_INFO_RECEIVED")
-ev:RegisterEvent("TRAINER_SHOW")
-ev:RegisterEvent("TRAINER_UPDATE")
-ev:RegisterEvent("TRAINER_CLOSED")
-ev:RegisterEvent("TRADE_SKILL_CLOSE")
-ev:RegisterEvent("CRAFT_CLOSE")
-ev:RegisterEvent("MERCHANT_SHOW")
-ev:RegisterEvent("PLAYER_MONEY")
+-- (pcall: an event this game version doesn't have is skipped instead of stopping the add-on loading)
+for _, e in ipairs({ "ADDON_LOADED", "TRADE_SKILL_SHOW", "TRADE_SKILL_UPDATE", "TRADE_SKILL_LIST_UPDATE", "CRAFT_SHOW", "CRAFT_UPDATE",
+	"SKILL_LINES_CHANGED", "GET_ITEM_INFO_RECEIVED", "TRAINER_SHOW", "TRAINER_UPDATE", "TRAINER_CLOSED", "TRADE_SKILL_CLOSE",
+	"CRAFT_CLOSE", "MERCHANT_SHOW", "PLAYER_MONEY" }) do pcall(ev.RegisterEvent, ev, e) end
 ev:SetScript("OnEvent", function(_, event, arg1)
 	if event == "ADDON_LOADED" and arg1 == ADDON then
 		RecipeSourcesDB = RecipeSourcesDB or {}
@@ -767,6 +793,7 @@ ev:SetScript("OnEvent", function(_, event, arg1)
 		DB.ty = DB.ty or 76
 		DB.px = DB.px or -34
 		DB.py = DB.py or -12
+		DB.mpx, DB.mpy, DB.mtx, DB.mty = DB.mpx or 4, DB.mpy or 0, DB.mtx or 0, DB.mty or -2
 		DB.trainCost = DB.trainCost or {}
 		DB.vendCost = DB.vendCost or {}
 		DB.obs = DB.obs or {}
@@ -796,7 +823,7 @@ ev:SetScript("OnEvent", function(_, event, arg1)
 		OnOpen("trade")
 	elseif event == "CRAFT_SHOW" then
 		OnOpen("craft")
-	elseif (event == "TRADE_SKILL_UPDATE" and active == "trade") or (event == "CRAFT_UPDATE" and active == "craft") or event == "SKILL_LINES_CHANGED" or event == "GET_ITEM_INFO_RECEIVED" or event == "PLAYER_MONEY" then
+	elseif ((event == "TRADE_SKILL_UPDATE" or event == "TRADE_SKILL_LIST_UPDATE") and active == "trade") or (event == "CRAFT_UPDATE" and active == "craft") or event == "SKILL_LINES_CHANGED" or event == "GET_ITEM_INFO_RECEIVED" or event == "PLAYER_MONEY" then
 		if panel and panel:IsShown() then
 			if not ev.pending then
 				ev.pending = true
@@ -810,16 +837,17 @@ SLASH_RECIPESOURCES1 = "/rsrc"
 SlashCmdList.RECIPESOURCES = function(msg)
 	local cmd, a, b = strsplit(" ", (msg or ""):lower())
 	if cmd == "tab" and tonumber(a) and tonumber(b) then
-		DB.tx, DB.ty = tonumber(a), tonumber(b)
+		if MODERN then DB.mtx, DB.mty = tonumber(a), tonumber(b) else DB.tx, DB.ty = tonumber(a), tonumber(b) end
+		local _, _, tx, ty = Off()
 		for which, t in pairs(tabs) do
 			t:ClearAllPoints()
-			t:SetPoint("TOPRIGHT", which == "craft" and CraftFrame or TradeSkillFrame, "BOTTOMRIGHT", DB.tx, DB.ty)
+			t:SetPoint("TOPRIGHT", which == "craft" and CraftFrame or TradeHost(), "BOTTOMRIGHT", tx, ty)
 		end
-		print("Recipe Sources: tab offset", DB.tx, DB.ty)
+		print("Recipe Sources: tab offset", tx, ty)
 	elseif cmd == "panel" and tonumber(a) and tonumber(b) then
-		DB.px, DB.py = tonumber(a), tonumber(b)
+		if MODERN then DB.mpx, DB.mpy = tonumber(a), tonumber(b) else DB.px, DB.py = tonumber(a), tonumber(b) end
 		if panel and panel:IsShown() then ShowPanel() end
-		print("Recipe Sources: panel offset", DB.px, DB.py)
+		print("Recipe Sources: panel offset", Off())
 	elseif cmd == "rescan" then
 		wipe(cache)
 		print("Recipe Sources: cache cleared")

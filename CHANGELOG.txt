@@ -1,5 +1,10 @@
 Pints Recipe Sources - Changelog
 
+v3.2
+- Works on WoW Forever (the modern game client). Classic Era is unchanged.
+- The Learnable list attaches to the modern professions window and reads its recipes.
+- Separate position settings for the modern window, lined up by default.
+
 v3.1
 NEW
 - "Other faction" option: tick the box at the top of the Learnable list to also see

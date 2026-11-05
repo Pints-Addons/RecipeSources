@@ -35,3 +35,7 @@ CHANGES
 LICENSE
   GPL-3.0 (see LICENSE.txt). Recipe, source, name and price data is generated from the
   CMaNGOS Classic world database (https://github.com/cmangos/classic-db, GPL).
+
+FEEDBACK
+  Report a bug or suggest an idea: https://github.com/Pints-Addons/RecipeSources/issues
+  Source code: https://github.com/Pints-Addons/RecipeSources
