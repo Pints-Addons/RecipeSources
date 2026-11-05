@@ -1,5 +1,8 @@
 Pints Recipe Sources - Changelog
 
+v3.2.2
+- WoW Forever: money shows with the gold, silver and copper icons (the game's own coin text showed bare digits).
+
 v3.2.1
 - WoW Forever: recipes discovered while crafting are noted (what you were crafting and your skill) for all your
   characters, and listed under "Discover while crafting".
