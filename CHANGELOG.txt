@@ -1,5 +1,9 @@
 Pints Recipe Sources - Changelog
 
+v3.2.1
+- WoW Forever: recipes discovered while crafting are noted (what you were crafting and your skill) for all your
+  characters, and listed under "Discover while crafting".
+
 v3.2
 - Works on WoW Forever (the modern game client). Classic Era is unchanged.
 - The Learnable list attaches to the modern professions window and reads its recipes.

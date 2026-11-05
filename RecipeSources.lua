@@ -23,10 +23,10 @@ local SKILL = {
 local SPEC = { [9788]=164,[9787]=164,[17039]=164,[17040]=164,[17041]=164,
 	[10656]=165,[10658]=165,[10660]=165,[20219]=202,[20222]=202 }
 local ROOTS = { [-732]="zone", [-75]="instance", [-698]="world", [-734]="event", [-36]="event", [-303]="pvp" }
-local ORDER = { trainer=1, vendor=2, quest=3, drop=4, object=5, zonedrop=6, world=7, event=8, other=9 }
-local CAT = { trainer="trainer", vendor="vendor", drop="drop", zonedrop="drop", world="drop",
+local ORDER = { discover=0, trainer=1, vendor=2, quest=3, drop=4, object=5, zonedrop=6, world=7, event=8, other=9 }
+local CAT = { discover="other", trainer="trainer", vendor="vendor", drop="drop", zonedrop="drop", world="drop",
 	quest="other", object="other", event="other", other="other" }
-local KINDNAME = { trainer="Trainer", vendor="Vendor", quest="Quest", drop="Drop", object="Container",
+local KINDNAME = { discover="Discovered", trainer="Trainer", vendor="Vendor", quest="Quest", drop="Drop", object="Container",
 	zonedrop="Zone drop", world="World drop", event="World event", other="Other" }
 
 local cache = {}      -- skillID -> entries
@@ -320,6 +320,7 @@ local function SourceLine(s)
 		return string.format("World drop: mobs lvl %d-%d%s", lo, hi, names[1] and (" (" .. names[1] .. (names[2] and ", " .. names[2] or "") .. ")") or "")
 	end
 	if s.kind == "trainer" then return "Trainer" end
+	if s.kind == "discover" then return "|cff66ccffDiscovered|r crafting " .. (s.from or "?") .. (s.skill and (" at skill " .. s.skill) or "") end
 	local tag = s.other and ("|cffff5050[" .. s.other .. "]|r ") or ""
 	if s.kind == "vendor" then return tag .. "Vendor: " .. NPCName(s.npc) .. (s.limited and " (limited)" or "") .. (s.zone and (" - " .. Loc(s)) or "") end
 	if s.kind == "drop" then
@@ -561,6 +562,29 @@ local function Render()
 		for _, x in ipairs(e.sources) do if CAT[x.kind] == src then return true end end
 	end
 	local nowL, laterL, knownL = {}, {}, {}
+	-- WoW Forever: recipes your characters have discovered while crafting (see "discoveries" below)
+	local discL, inList = {}, {}
+	local disc = DB.disc or {}
+	local function discSources(dname)
+		local d, out = disc[dname], {}
+		for from, f in pairs(d and d.from or {}) do out[#out + 1] = { kind = "discover", from = from, skill = f.min } end
+		table.sort(out, function(a, b) return (a.skill or 0) < (b.skill or 0) end)
+		return out
+	end
+	for _, e in ipairs(list) do
+		inList[e.name] = true
+		if disc[e.name] and not e.hasDisc then
+			e.hasDisc = true
+			for k, ds in ipairs(discSources(e.name)) do table.insert(e.sources, k, ds) end
+		end
+	end
+	for dname, d in pairs(disc) do
+		if d.prof == name and not inList[dname] and not (d.id and IsPlayerSpell(d.id)) and not (CDB.known[skillID] and CDB.known[skillID][dname]) then
+			local src = discSources(dname)
+			if #src > 0 then discL[#discL + 1] = { id = d.id, name = dname, learnedAt = src[1].skill or 0, sources = src, disc = true } end
+		end
+	end
+	table.sort(discL, function(a, b) if a.learnedAt ~= b.learnedAt then return a.learnedAt < b.learnedAt end return a.name < b.name end)
 	for _, e in ipairs(list) do
 		if srcOK(e) then
 			if IsKnown(skillID, e) then knownL[#knownL+1] = e
@@ -600,6 +624,10 @@ local function Render()
 		panel.status2:SetText(train)
 		add(SetHeader, string.format("Learnable now (%d)", #nowL))
 		for _, e in ipairs(nowL) do add(SetEntry, e, rank) end
+		if #discL > 0 and (src == "all" or src == "other") then
+			add(SetHeader, string.format("Discover while crafting (%d)", #discL))
+			for _, e in ipairs(discL) do add(SetEntry, e, rank) end
+		end
 		if status == "unlearned" then bracketed(laterL) end
 	end
 	panel.content:SetHeight(math.max(1, i * ROW_H))
@@ -776,6 +804,58 @@ local function OnOpen(which)
 	elseif panel then
 		panel:Hide()
 	end
+end
+
+---------------------------------------------------------------- discoveries (WoW Forever)
+-- On WoW Forever a recipe can be learned by crafting another one. When a recipe is learned within a few seconds of
+-- crafting (and not at a trainer or from a recipe item), it's written down - what you were crafting and your skill -
+-- for every character on the account, and shown under "Discover while crafting".
+local lastCraft, lastDisc, lastDiscT
+local function Discovered(recipeID, rname)
+	if not (MODERN and DB) or ev.trainerOpen then return end
+	if not lastCraft or GetTime() - lastCraft.t > 20 then return end
+	if not rname and recipeID then local r = C_TradeSkillUI.GetRecipeInfo(recipeID); rname = (r and r.name) or SpellName(recipeID) end
+	if not rname or rname == lastCraft.name then return end
+	DB.disc = DB.disc or {}
+	if lastDisc == rname and GetTime() - (lastDiscT or 0) < 3 then
+		if recipeID and DB.disc[rname] and not DB.disc[rname].id then DB.disc[rname].id = recipeID end
+		return
+	end
+	lastDisc, lastDiscT = rname, GetTime()
+	local prof, rank = ModernSkill()
+	local d = DB.disc[rname] or { from = {} }
+	DB.disc[rname] = d
+	d.id, d.prof = d.id or recipeID, d.prof or prof
+	local f = d.from[lastCraft.name or "?"] or {}
+	d.from[lastCraft.name or "?"] = f
+	f.n = (f.n or 0) + 1
+	if rank then f.min = math.min(f.min or rank, rank) end
+	f.t = time()
+	print(("|cff66ccffLearnable Recipes:|r discovered |cffffffff%s|r while crafting %s%s - noted for all your characters."):format(rname, lastCraft.name or "?", rank and (" (skill " .. rank .. ")") or ""))
+	if panel and panel:IsShown() then C_Timer.After(0.3, Render) end
+end
+if MODERN then
+	if C_TradeSkillUI.CraftRecipe then
+		hooksecurefunc(C_TradeSkillUI, "CraftRecipe", function(id)
+			local r = id and C_TradeSkillUI.GetRecipeInfo(id)
+			lastCraft = { id = id, name = r and r.name, t = GetTime() }
+		end)
+	end
+	local LEARN = ERR_LEARN_RECIPE_S and ("^" .. ERR_LEARN_RECIPE_S:gsub("([%(%)%.%+%-%*%?%[%]%^%$])", "%%%1"):gsub("%%%%s", "(.+)") .. "$")
+	local dv = CreateFrame("Frame")
+	for _, e in ipairs({ "NEW_RECIPE_LEARNED", "UNIT_SPELLCAST_SUCCEEDED", "CHAT_MSG_SYSTEM" }) do pcall(dv.RegisterEvent, dv, e) end
+	dv:SetScript("OnEvent", function(_, e, a1, a2, a3)
+		if e == "UNIT_SPELLCAST_SUCCEEDED" then
+			if a1 ~= "player" or not lastCraft then return end
+			-- still crafting: keep the clock running; anything else (a recipe item's "learning", say) ends it
+			if a3 == lastCraft.id then lastCraft.t = GetTime() else lastCraft = nil end
+		elseif e == "NEW_RECIPE_LEARNED" then
+			Discovered(a1)
+		elseif e == "CHAT_MSG_SYSTEM" and LEARN and type(a1) == "string" then
+			local n = a1:match(LEARN)
+			if n then Discovered(nil, (n:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|H.-|h", ""):gsub("|h", ""):gsub("|r", ""):gsub("^%[", ""):gsub("%]$", ""))) end
+		end
+	end)
 end
 
 -- (pcall: an event this game version doesn't have is skipped instead of stopping the add-on loading)
