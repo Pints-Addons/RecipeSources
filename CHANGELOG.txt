@@ -1,5 +1,8 @@
 Pints Recipe Sources - Changelog
 
+v3.2.3
+- WoW Forever: no more errors when the game hides a system chat message from add-ons.
+
 v3.2.2
 - WoW Forever: money shows with the gold, silver and copper icons (the game's own coin text showed bare digits).
 

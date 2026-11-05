@@ -862,7 +862,7 @@ if MODERN then
 			if a3 == lastCraft.id then lastCraft.t = GetTime() else lastCraft = nil end
 		elseif e == "NEW_RECIPE_LEARNED" then
 			Discovered(a1)
-		elseif e == "CHAT_MSG_SYSTEM" and LEARN and type(a1) == "string" then
+		elseif e == "CHAT_MSG_SYSTEM" and LEARN and type(a1) == "string" and not (type(issecretvalue) == "function" and issecretvalue(a1)) then
 			local n = a1:match(LEARN)
 			if n then Discovered(nil, (n:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|H.-|h", ""):gsub("|h", ""):gsub("|r", ""):gsub("^%[", ""):gsub("%]$", ""))) end
 		end
