@@ -354,6 +354,10 @@ end
 local function TrainerCost(e)
 	local c = DB.trainCost[e.name]
 	if c then return c end
+	-- prices other players' trainers showed in WoW Forever (HarvestCosts.lua)
+	local H = MODERN and _G.RecipeSourcesHarvest
+	c = H and H.trainCost and H.trainCost[e.name]
+	if c then return c end
 	c = D.cost[e.id]
 	if c then return c, true end
 end
@@ -725,12 +729,18 @@ local function ScanTrainer(final)
 	end
 	local n = 0
 	for i = 1, (GetNumTrainerServices() or 0) do
-		local name, _, cat = GetTrainerServiceInfo(i)
+		local name, rank, cat = GetTrainerServiceInfo(i)
 		if name and name ~= "" and cat ~= "header" then
 			local c = GetTrainerServiceCost(i)
 			if type(c) == "number" then
 				n = n + 1
 				DB.trainCost[name] = c
+				-- every rank on its own, with the level it needs: "Renew|Rank 3" = { cost, level, profession trainer? }
+				-- (gathered by Pint's Add-ons to fill in the built-in prices for everyone)
+				DB.trainRank = DB.trainRank or {}
+				local lvl = GetTrainerServiceLevelReq and GetTrainerServiceLevelReq(i)
+				local prof = IsTradeskillTrainer and IsTradeskillTrainer() or false
+				DB.trainRank[name .. "|" .. ((type(rank) == "string" and rank) or "")] = { c, type(lvl) == "number" and lvl or nil, prof and true or nil }
 			end
 		end
 	end

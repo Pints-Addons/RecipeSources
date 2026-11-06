@@ -1,5 +1,9 @@
 Pints Recipe Sources - Changelog
 
+v3.2.4
+- WoW Forever: comes with trainer prices seen in Forever, so recipes show a real cost before you've visited the trainer.
+- Trainer visits now also note each rank's price and level (to fill in more prices in later updates).
+
 v3.2.3
 - WoW Forever: no more errors when the game hides a system chat message from add-ons.
 
