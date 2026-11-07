@@ -894,7 +894,10 @@ ev:SetScript("OnEvent", function(_, event, arg1)
 		DB.ty = DB.ty or 76
 		DB.px = DB.px or -34
 		DB.py = DB.py or -12
-		DB.mpx, DB.mpy, DB.mtx, DB.mty = DB.mpx or 4, DB.mpy or 0, DB.mtx or 0, DB.mty or -2
+		DB.mpx, DB.mpy, DB.mtx, DB.mty = DB.mpx or 66, DB.mpy or 0, DB.mtx or 0, DB.mty or -2
+		-- (WoW Forever: the profession window has a column of profession tabs down its right side; the panel now sits
+		-- past them. Moves the old default spot once; a spot set with /rsrc is kept.)
+		if not DB.mpxTabs then DB.mpxTabs = true; if DB.mpx == 4 then DB.mpx = 66 end end
 		DB.trainCost = DB.trainCost or {}
 		DB.vendCost = DB.vendCost or {}
 		DB.obs = DB.obs or {}

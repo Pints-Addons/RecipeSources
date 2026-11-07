@@ -1,5 +1,8 @@
 Pints Recipe Sources - Changelog
 
+v3.2.5
+- WoW Forever: the Learnable Recipes panel sits to the right of the profession window's tabs instead of over them.
+
 v3.2.4
 - WoW Forever: comes with trainer prices seen in Forever, so recipes show a real cost before you've visited the trainer.
 - Trainer visits now also note each rank's price and level (to fill in more prices in later updates).
