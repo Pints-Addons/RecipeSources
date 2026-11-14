@@ -1,5 +1,9 @@
 Pints Recipe Sources - Changelog
 
+v3.2.6
+- Learnable Recipes: a rank you already have (Journeyman, Expert, Artisan) no longer shows as learnable - your skill cap
+  says which you have even when the game doesn't list the rank itself as known.
+
 v3.2.5
 - WoW Forever: the Learnable Recipes panel sits to the right of the profession window's tabs instead of over them.
 

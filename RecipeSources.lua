@@ -602,7 +602,11 @@ local function Render()
 	table.sort(discL, function(a, b) if a.learnedAt ~= b.learnedAt then return a.learnedAt < b.learnedAt end return a.name < b.name end)
 	for _, e in ipairs(list) do
 		if srcOK(e) then
-			if IsKnown(skillID, e) then knownL[#knownL+1] = e
+			-- (a rank you already have: the game doesn't always say the rank-up spell is known, but your skill cap does -
+			-- Journeyman lifts it to 150, Expert to 225, Artisan to 300)
+			local RANK_CAP = { [50] = 150, [125] = 225, [200] = 300 }
+			local hasRank = e.rankUp and RANK_CAP[e.learnedAt] and (maxRank or 0) >= RANK_CAP[e.learnedAt]
+			if IsKnown(skillID, e) or hasRank then knownL[#knownL+1] = e
 			elseif e.learnedAt <= rank then nowL[#nowL+1] = e
 			else laterL[#laterL+1] = e end
 		end
