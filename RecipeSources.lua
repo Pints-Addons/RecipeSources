@@ -186,6 +186,40 @@ local function MakeSource(row, fac, isItem)
 	end
 end
 
+-- What you've seen yourself at vendors and trainers (WoW Forever moved, added and dropped some): a vendor you've seen
+-- selling it is shown with where they really are; one that isn't in the built-in list is added; a trainer you've
+-- seen teach it is named, with where they stand. Marked "seen".
+local function PSeen(e, fac)
+	local sv = e.itemID and DB.seenVend and DB.seenVend[e.itemID]
+	if sv then
+		for npc, v in pairs(sv) do
+			local mine = (v.fac or 0) == 0 or v.fac == fac
+			if mine or DB.otherFaction then
+				local hit
+				for _, s in ipairs(e.sources) do
+					if s.kind == "vendor" and s.npc and NPCName(s.npc) == npc then hit = s; break end
+				end
+				if not hit then hit = { kind = "vendor", name = npc }; table.insert(e.sources, 1, hit) end
+				hit.zone, hit.map, hit.x, hit.y, hit.limited, hit.seen = v.zone, v.map, v.x, v.y, v.limited, true
+				hit.cont = nil
+				if not mine then hit.other = (v.fac == 1) and "Horde" or "Alliance" end
+			end
+		end
+	end
+	local st = DB.seenTrain and DB.seenTrain[e.name]
+	if st then
+		local list = {}
+		for npc, t in pairs(st) do if (t.fac or 0) == 0 or t.fac == fac then list[#list + 1] = { npc, t } end end
+		if #list > 0 then
+			local hit
+			for _, s in ipairs(e.sources) do if s.kind == "trainer" then hit = s; break end end
+			if not hit then hit = { kind = "trainer" }; table.insert(e.sources, 1, hit) end
+			table.sort(list, function(a, b) return a[1] < b[1] end)
+			hit.trainers, hit.seen = list, true
+			hit.name, hit.zone, hit.map, hit.x, hit.y = list[1][1], list[1][2].zone, list[1][2].map, list[1][2].x, list[1][2].y
+		end
+	end
+end
 local function Scan(skillID, done)
 	if cache[skillID] then return done(cache[skillID]) end
 	if not D then return done(nil, "Recipe data file is missing.") end
@@ -199,6 +233,7 @@ local function Scan(skillID, done)
 				local s = MakeSource(row, fac, r[3] > 0)
 				if s then e.sources[#e.sources + 1] = s end
 			end
+			if PSeen then PSeen(e, fac) end
 			if #e.sources > 0 then
 				table.sort(e.sources, function(a, b)
 					if (a.other ~= nil) ~= (b.other ~= nil) then return b.other ~= nil end    -- your own faction's sources first
@@ -330,10 +365,15 @@ local function SourceLine(s)
 		local lo, hi, names = WorldInfo(s)
 		return string.format("World drop: mobs lvl %d-%d%s", lo, hi, names[1] and (" (" .. names[1] .. (names[2] and ", " .. names[2] or "") .. ")") or "")
 	end
-	if s.kind == "trainer" then return "Trainer" end
+	if s.kind == "trainer" then
+		if s.trainers then
+			return "Trainer: " .. s.name .. (s.zone and (" - " .. Loc(s)) or "") .. (#s.trainers > 1 and (" (+" .. (#s.trainers - 1) .. " more)") or "") .. " |cff40ff40seen|r"
+		end
+		return "Trainer"
+	end
 	if s.kind == "discover" then return "|cff66ccffDiscovered|r crafting " .. (s.from or "?") .. (s.skill and (" at skill " .. s.skill) or "") end
 	local tag = s.other and ("|cffff5050[" .. s.other .. "]|r ") or ""
-	if s.kind == "vendor" then return tag .. "Vendor: " .. NPCName(s.npc) .. (s.limited and " (limited)" or "") .. (s.zone and (" - " .. Loc(s)) or "") end
+	if s.kind == "vendor" then return tag .. "Vendor: " .. (s.name or NPCName(s.npc)) .. (s.limited and " (limited)" or "") .. (s.zone and (" - " .. Loc(s)) or "") .. (s.seen and " |cff40ff40seen|r" or "") end
 	if s.kind == "drop" then
 		local m = NPCName(s.mobs[1])
 		if s.chance and s.chance > 0 then m = m .. string.format(" (%s%%)", s.chance >= 1 and string.format("%.0f", s.chance) or string.format("%.2g", s.chance)) end
@@ -719,6 +759,7 @@ local function CreatePanel()
 end
 
 local trainerReported, trainerFiltersDone, trainerTotal = nil, nil, 0
+local PSeenDirty
 local function ScanTrainer(final)
 	if not (GetNumTrainerServices and GetTrainerServiceInfo and GetTrainerServiceCost) then return end
 	-- once per visit: show every service type (incl. ones you can't learn yet) and open collapsed groups
@@ -745,10 +786,20 @@ local function ScanTrainer(final)
 				local lvl = GetTrainerServiceLevelReq and GetTrainerServiceLevelReq(i)
 				local prof = IsTradeskillTrainer and IsTradeskillTrainer() or false
 				DB.trainRank[name .. "|" .. ((type(rank) == "string" and rank) or "")] = { c, type(lvl) == "number" and lvl or nil, prof and true or nil }
+				-- who teaches it, and where (a profession trainer's recipes only)
+				local npc = UnitName("npc")
+				if prof and npc and not (issecretvalue and issecretvalue(npc)) then
+					local zone, m, x, y = HereNow()
+					DB.seenTrain = DB.seenTrain or {}
+					DB.seenTrain[name] = DB.seenTrain[name] or {}
+					DB.seenTrain[name][npc] = { zone = zone, map = m, x = x, y = y, fac = MyFaction() }
+					PSeenDirty = true
+				end
 			end
 		end
 	end
 	trainerTotal = math.max(trainerTotal, n)
+	if PSeenDirty then PSeenDirty = nil; wipe(cache) end
 	if n > 0 and not trainerReported then
 		trainerReported = true
 		print(("|cff66ccffRecipe Sources:|r recorded %d training costs from this trainer."):format(n))
@@ -758,6 +809,17 @@ local function ScanTrainer(final)
 	if panel and panel:IsShown() then Render() end
 end
 
+-- where you're standing (by the vendor or trainer): zone, map, x, y (0-100)
+local function HereNow()
+	local m = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+	local x, y
+	if m then
+		local ok, pos = pcall(C_Map.GetPlayerMapPosition, m, "player")
+		if ok and pos then x, y = pos:GetXY() end
+	end
+	if x and issecretvalue and (issecretvalue(x) or issecretvalue(y)) then x, y = nil, nil end
+	return GetRealZoneText(), m, x and math.floor(x * 1000 + 0.5) / 10, y and math.floor(y * 1000 + 0.5) / 10
+end
 local function ScanMerchant()
 	if not (GetMerchantNumItems and GetMerchantItemID) then return end
 	local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
@@ -766,8 +828,17 @@ local function ScanMerchant()
 		if id then
 			local classID = select(6, instant(id))
 			if classID == 9 then   -- Recipe
-				local _, _, price, qty = GetMerchantItemInfo(i)
+				local _, _, price, qty, avail = GetMerchantItemInfo(i)
 				if price and price > 0 then DB.vendCost[id] = math.floor(price / math.max(qty or 1, 1)) end
+				-- who sells it, and where (they're standing in front of you)
+				local npc = UnitName("npc")
+				if npc and not (issecretvalue and issecretvalue(npc)) then
+					local zone, m, x, y = HereNow()
+					DB.seenVend = DB.seenVend or {}
+					DB.seenVend[id] = DB.seenVend[id] or {}
+					DB.seenVend[id][npc] = { zone = zone, map = m, x = x, y = y, limited = (type(avail) == "number" and avail >= 0) or nil, fac = MyFaction() }
+					wipe(cache)
+				end
 			end
 		end
 	end

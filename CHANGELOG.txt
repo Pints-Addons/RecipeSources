@@ -1,5 +1,9 @@
 Pints Recipe Sources - Changelog
 
+v3.2.7
+- Learnable Recipes learns who sells and teaches what, and where: open a vendor or trainer and its recipes show that
+  vendor or trainer with their real place (marked "seen") - WoW Forever moved and added some. Limited stock too.
+
 v3.2.6
 - Learnable Recipes: a rank you already have (Journeyman, Expert, Artisan) no longer shows as learnable - your skill cap
   says which you have even when the game doesn't list the rank itself as known.
