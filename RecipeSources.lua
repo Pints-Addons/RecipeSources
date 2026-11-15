@@ -148,6 +148,7 @@ end
 
 ---------------------------------------------------------------- recipe list for a profession
 -- source rows: {'t',npc} {'v',npc,limited} {'d',npc,chance} {'w',lo,hi} {'q',quest} {'o',object}
+--   {'x',kind,name,zone,text,faction,limited} (WoW Forever's own recipes, from its data files)
 -- the other faction's vendors and quests can still be shown for recipes that are items (they can be traded or sold on
 -- the neutral auction house); trainers can't - nobody can learn from the other side's trainer
 local FACNAME = { [1] = "Horde", [2] = "Alliance" }
@@ -178,6 +179,14 @@ local function MakeSource(row, fac, isItem)
 		local s = { kind = "quest", name = q and q[1] or ("Quest #" .. row[2]), other = other }
 		if q and q[3] ~= 0 then NPCPlace(q[3], s); s.giver = q[3] end
 		return s
+	elseif k == "x" then
+		-- WoW Forever's own recipes (ForeverTailoring.lua and the like): named vendor, drop text or quest, with its zone
+		local f = row[6] or 0
+		if f ~= 0 and f ~= fac then
+			if not (isItem and DB.otherFaction) then return end
+			other = FACNAME[f]
+		end
+		return { kind = row[2], name = row[3], zone = row[4], text = row[5], limited = row[7] or nil, other = other }
 	elseif k == "o" then
 		local o = D.object[row[2]]
 		local s = { kind = "object", name = o and o[1] or "Container" }
@@ -373,6 +382,7 @@ local function SourceLine(s)
 	end
 	if s.kind == "discover" then return "|cff66ccffDiscovered|r crafting " .. (s.from or "?") .. (s.skill and (" at skill " .. s.skill) or "") end
 	local tag = s.other and ("|cffff5050[" .. s.other .. "]|r ") or ""
+	if s.text then return tag .. s.text end
 	if s.kind == "vendor" then return tag .. "Vendor: " .. (s.name or NPCName(s.npc)) .. (s.limited and " (limited)" or "") .. (s.zone and (" - " .. Loc(s)) or "") .. (s.seen and " |cff40ff40seen|r" or "") end
 	if s.kind == "drop" then
 		local m = NPCName(s.mobs[1])

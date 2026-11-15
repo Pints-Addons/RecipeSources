@@ -3,7 +3,7 @@
 ## Notes: Adds a "Learnable" tab to profession windows listing every recipe you haven't learned, where to get it (trainer, vendor, drop, quest) and what it costs. Standalone - no other addons needed. /rsrc
 ## Author: Jake (Pint's Add-ons, built with Claude)
 ## X-License: GPL-3.0
-## Version: 3.2.7
+## Version: 3.2.8
 ## X-Curse-Project-ID: 1776765
 ## OptionalDeps: TomTom
 ## SavedVariables: RecipeSourcesDB
@@ -11,4 +11,9 @@
 
 RecipeData.lua
 HarvestCosts.lua
+ForeverTailoring.lua
+ForeverAlchemy.lua
+ForeverBlacksmithing.lua
+ForeverEngineering.lua
+ForeverLeatherworking.lua
 RecipeSources.lua

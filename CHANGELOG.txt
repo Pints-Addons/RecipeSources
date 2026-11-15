@@ -1,5 +1,14 @@
 Pints Recipe Sources - Changelog
 
+v3.2.8
+- WoW Forever: Tailoring's new recipes are in Learnable Recipes - 168 Forever patterns Classic doesn't have (Stormsewn,
+  Pristine/Shadow/Silky and the other Filigreed sets, Frothing and Nether- sets, Venomspew and Swarmtender, Manaflare,
+  Conviction and Demonheart, reagent bags, Faction Banner, Spinning Wheel, Loom and more), each with its trainer, vendor
+  (and zone - Merchant's Favor ones too), drop or quest, what it makes and its cost. From Wowhead's WoW Forever database.
+- WoW Forever: the same for Alchemy (67 recipes), Engineering (57), Blacksmithing (191) and Leatherworking (250) - Forever's
+  own recipes Classic doesn't have, each with its trainer, vendor and zone (Merchant's Favor and other non-gold costs
+  named), drop or quest, what it makes and its cost.
+
 v3.2.7
 - Learnable Recipes learns who sells and teaches what, and where: open a vendor or trainer and its recipes show that
   vendor or trainer with their real place (marked "seen") - WoW Forever moved and added some. Limited stock too.
