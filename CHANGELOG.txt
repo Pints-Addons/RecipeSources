@@ -1,6 +1,9 @@
 Pints Recipe Sources - Changelog
 
 v3.2.8
+- WoW Forever: the recipes Classic also has now show Forever's skill levels and training costs (462 levels, 74 costs) -
+  Forever moved many of them (Bolt of Runecloth needs Tailoring 205 there, not 250; Shadoweave Robe 180, not 215).
+  Learnable Recipes and Pint's Professions now agree. Classic Era keeps Classic's levels.
 - WoW Forever: Tailoring's new recipes are in Learnable Recipes - 168 Forever patterns Classic doesn't have (Stormsewn,
   Pristine/Shadow/Silky and the other Filigreed sets, Frothing and Nether- sets, Venomspew and Swarmtender, Manaflare,
   Conviction and Demonheart, reagent bags, Faction Banner, Spinning Wheel, Loom and more), each with its trainer, vendor

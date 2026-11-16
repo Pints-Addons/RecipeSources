@@ -16,4 +16,5 @@ ForeverAlchemy.lua
 ForeverBlacksmithing.lua
 ForeverEngineering.lua
 ForeverLeatherworking.lua
+ForeverLevels.lua
 RecipeSources.lua
