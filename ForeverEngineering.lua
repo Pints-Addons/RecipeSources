@@ -9,7 +9,7 @@ if not (D and D.recipes and D.make and D.cost and D.price) then return end
 local ADD = {
 {12716,205,0,{10577,{{10559,2},{3860,4},{10505,5},{10558,1},{7068,1}}},1500,0,{{"t",8126},{"t",8738}}},
 {19825,290,16053,{16008,{{10500,1},{12364,2},{12810,4}}},0,0,{{"x","zonedrop",nil,nil,"Drop: Doomforge Arcanasmith (Blackrock Depths)"}}},
-{23079,275,18655,{18637,{{16000,2},{18631,1},{14047,2}}},0,0,{{"x","zonedrop",nil,nil,"Drop (where from isn't known yet)"}}},
+{23079,275,18655,{18637,{{16000,2},{18631,1},{14047,2}}},0,0,{{"x","zonedrop",nil,nil,"Found: Gordok Tribute (Dire Maul)"}}},
 {26011,320,0,{21277,{{15407,1},{15994,4},{7079,2},{18631,2},{10558,1}}},0,0,{{"x","quest",nil,nil,"Quest reward"}}},
 {28327,275,22729,{22728,{{15994,2},{10561,1},{10558,1}}},0,0,{{"x","vendor","Gelvas Grimegate (40 Darkmoon Prize Tickets)","Elwynn Forest",nil,0,nil},{"x","quest","40 Tickets - Schematic: Steam Tonk Controller"}}},
 {435956,200,215429,{213383,{{6037,1},{213381,5}}},0,25000,{{"x","vendor","Ziri \"The Wrench\" Littlesprocket","Gnomeregan",nil,0,nil}}},

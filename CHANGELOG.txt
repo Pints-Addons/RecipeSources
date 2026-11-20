@@ -1,5 +1,19 @@
 Pints Recipe Sources - Changelog
 
+v3.2.9
+- WoW Forever: Classic recipes Forever's recipe lists don't have (Heavy Shot, the Ironvine Breastplate, Gloves and
+  Belt) are hidden until they're confirmed; /rsrc classic shows them.
+- Learnable Recipes: a recipe you can learn from a trainer names the nearest trainer, with zone and coordinates
+  ("Trainer: Name - Zone (x, y)", + how many more teach it), instead of just "Trainer".
+- WoW Forever: Cooking (35 recipes), First Aid (17), Enchanting (20) and Mining (5) recipes Classic doesn't have are
+  in Learnable Recipes, each with its trainer, vendor and zone, drop or quest - and Forever's skill levels and training
+  costs for the ones Classic also has. From Wowhead's WoW Forever database.
+- WoW Forever: all 18 recipes that said "Drop (where from isn't known yet)" now name where they drop - the camp
+  blueprints from dungeon bosses (Cookie, Lord Serpentis, Nanaya...), and the rest from their creatures or containers.
+- WoW Forever: the recipes Classic also has were checked against Wowhead's WoW Forever recipe pages (736 recipe items): 65
+  come from somewhere else on Forever - 51 sold by different vendors (or no longer sold), 14 dropped by different
+  creatures, 2 different quests - and show Forever's sources.
+
 v3.2.8
 - WoW Forever: the recipes Classic also has now show Forever's skill levels and training costs (462 levels, 74 costs) -
   Forever moved many of them (Bolt of Runecloth needs Tailoring 205 there, not 250; Shadoweave Robe 180, not 215).

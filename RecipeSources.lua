@@ -144,6 +144,7 @@ local function NPCPlace(id, s)
 	local n = D.npc[id]
 	if n and n[2] then s.zone, s.map, s.x, s.y = Locate(n[2], n[3], n[4]) end
 	s.cont = n and n[2]
+	s.wx, s.wy = n and n[3], n and n[4]
 end
 
 ---------------------------------------------------------------- recipe list for a profession
@@ -233,7 +234,7 @@ local function Scan(skillID, done)
 	if cache[skillID] then return done(cache[skillID]) end
 	if not D then return done(nil, "Recipe data file is missing.") end
 	local fac, out = MyFaction(), {}
-	local _, _, _, here = UnitPosition("player")
+	local px, py, _, here = UnitPosition("player")     -- (world position, in the same order as the data: the nearest trainer is listed first)
 	for id, r in pairs(D.recipes) do
 		local spec = r[4]
 		if r[1] == skillID and (spec == 0 or IsPlayerSpell(spec)) then
@@ -249,8 +250,16 @@ local function Scan(skillID, done)
 					if ORDER[a.kind] ~= ORDER[b.kind] then return ORDER[a.kind] < ORDER[b.kind] end
 					local ah, bh = a.cont == here, b.cont == here          -- this continent first
 					if ah ~= bh then return ah end
+					-- trainers: the nearest one first
+					if a.kind == "trainer" and ah and py and a.wx and b.wx then
+						return (a.wx - px) ^ 2 + (a.wy - py) ^ 2 < (b.wx - px) ^ 2 + (b.wy - py) ^ 2
+					end
 					return (a.chance or 0) > (b.chance or 0)
 				end)
+				-- how many other trainers teach it (shown as "+N more" beside the nearest)
+				local nt, first = 0, nil
+				for _, s2 in ipairs(e.sources) do if s2.kind == "trainer" then nt = nt + 1; first = first or s2 end end
+				if first then first.more = nt - 1 end
 				e.name = SpellName(id) or ("Recipe " .. id)
 				-- profession rank-ups share the profession's own name ("Engineering"); show which rank it is
 				local RANKS = { [50] = "Journeyman", [125] = "Expert", [200] = "Artisan" }
@@ -377,6 +386,10 @@ local function SourceLine(s)
 	if s.kind == "trainer" then
 		if s.trainers then
 			return "Trainer: " .. s.name .. (s.zone and (" - " .. Loc(s)) or "") .. (#s.trainers > 1 and (" (+" .. (#s.trainers - 1) .. " more)") or "") .. " |cff40ff40seen|r"
+		end
+		-- the nearest trainer who teaches it (your faction), with where they stand
+		if s.npc then
+			return "Trainer: " .. NPCName(s.npc) .. (s.zone and (" - " .. Loc(s)) or "") .. ((s.more or 0) > 0 and (" (+" .. s.more .. " more)") or "")
 		end
 		return "Trainer"
 	end
@@ -1037,6 +1050,15 @@ SlashCmdList.RECIPESOURCES = function(msg)
 		if MODERN then DB.mpx, DB.mpy = tonumber(a), tonumber(b) else DB.px, DB.py = tonumber(a), tonumber(b) end
 		if panel and panel:IsShown() then ShowPanel() end
 		print("Recipe Sources: panel offset", Off())
+	elseif cmd == "classic" then
+		local U = RecipeSourcesData.unconfirmed
+		if not U then print("|cff66ccffRecipe Sources|r: nothing is hidden outside WoW Forever.") return end
+		RecipeSourcesDB = RecipeSourcesDB or {}
+		RecipeSourcesDB.showUnconfirmed = not RecipeSourcesDB.showUnconfirmed
+		for id, r in pairs(U) do RecipeSourcesData.recipes[id] = RecipeSourcesDB.showUnconfirmed and r or nil end
+		wipe(cache)
+		print("|cff66ccffRecipe Sources|r: " .. (RecipeSourcesDB.showUnconfirmed and "showing" or "hiding") .. " Classic recipes not confirmed on WoW Forever.")
+		if panel and panel:IsShown() then Render() end
 	elseif cmd == "rescan" then
 		wipe(cache)
 		print("Recipe Sources: cache cleared")
@@ -1045,6 +1067,7 @@ SlashCmdList.RECIPESOURCES = function(msg)
 		print("|cff66ccffRecipe Sources|r - open a profession and click the Learnable tab.")
 		print("  /rsrc tab <x> <y>   move the tab (default -40 76)")
 		print("  /rsrc panel <x> <y> move the list (default -34 -12)")
+		if RecipeSourcesData.unconfirmed then print("  /rsrc classic       show/hide Classic recipes not confirmed on WoW Forever") end
 		print("  /rsrc rescan        rebuild the recipe list")
 	end
 end
